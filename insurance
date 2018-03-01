@@ -1,0 +1,76 @@
+#STEP1:- Importing data set
+insurance <- read.csv("../input/insurance.csv")
+insurance <- insurance[2:8]
+
+
+#STEP2:- Exploring and Preparing the data
+str(insurance)
+(Note:-Prior to building a model, it is often helpful to check for normality.Although linear regression does not strictly require a normally distributed dependent variable, the mdoel often fits better when this is true.Let's look at suumary statistics:)
+
+summary(insurance$charges)
+Because, the mean is greater than the median, this implies that the distribuation of insurance charges is right-skewed.We can confirm this visually using a histogram
+
+hist(insurance$charges)
+(Note:-Regression model requires that every feature is numeric,yet we have three factor-type features in our data frame. But, we know that region variable has four levels, lets take a closer look to see how they are distributed:)
+table(insurance$region)
+#Here, we can see that the data has been divided nearly evenly among four geographic regions.
+#Exploring relationships among features-the correlation matrix
+#Before fitting a regression model to data,it can be useful to determine how the independent variable are related to the dependent variable and each other.
+#A correlation matrix provides a quick overview of these relationships.To create a coorelation matrix for the four numric variables in our data, use cor():
+cor(insurance[c("age","bmi","children","charges")])
+
+#Visualising relationships among features-Scatterplot Matrix
+pairs(insurance[c("age","bmi","children","charges")])
+#If we add more information to the plot, it can be more useful.
+library(psych)
+pairs.panels(insurance[c("age","bmi","children","charges")])
+#About the scatterplot matrix diagram
+#1)Above the diagonal, the scatterplots have been replaced with a correlation matrix.
+#2)On the diagonol, a histogram depicting the distribution of values for each feature is shown.
+#3)Finally, the scatterplots below the diagonal are now presented with additional visual information.
+
+
+STEP3:- Training a model on the data
+#Building Multiple linear regression here
+model <- lm(charges ~ .,data = insurance)
+#After buiilding the model see the estimated beta coefficients
+model
+#Describing Model output :
+#Understanding the regression coefficients is fairly straightforward:
+1)The intercept(-11938.5) is the predicted value of charges when the independent variables are equal to 0. But here it is evident that as it is impossible to have values of 0 for all features, for this reason, in practice, the intercept is often ignored.
+2)The coefficients indicate the estimated increase in charges for an increase of one in each of the feature, assuming all other values held constant.
+3)Formula: y=b0+ a1x1 + a2x2 + a3x3 + a4x4 + a5x5 + a6x6
+
+              where, 
+                             b0 = intercept
+                             a1,a2,a3,a4,a5,a6 = coefficients
+                             x1,x2,x3,x4,x5,x6 = features or columns or variables
+                             
+
+STEP4:- Evaluating Model Peformance
+The parameter estimates we obtained by typing model tell us about how the independent variables are related to the dependent variable, but they tell us nothing about how well the model fits our data. To evaluate the model performance , we can use summary command:
+summary(model)
+#Knowing summary()
+Am dividing the summary output to three for clear view:
+1)Residuals: The residual section provides summary statistics for the error in our predictions. Residual is equal to true value minus predicted value.
+2)p-value: Small p value suggest that the true coefficient is very unlikely to be 0, which means that the feature is extreamly unlikely to have no relationship with the dependent variable. The variables with stars( *** ) corrsponds to indicate the significant level met by the estimate. significant level as per industry standard is 0.05
+3)Multiple R-squared value :- It provides a measure of how well our model as a whole explains the values of the dependent variable. It is similar to correlation coefficient, the closer the value is 1.0, the better the model perfectly explains the data. Here, it explains nearly 75% of the variation in the dependent variable.
+It is not uncommon for regression model of real-world data to have fairly low R-sqaured values; a value of 0.75 is actually good.
+
+
+
+Step5:- Improving model performance
+1)Adding non-linear relationships: The effect of age on medical expenditure may not be constant throughout all the age values; treatment may fluctuate as older we go. To account for a non-linear relationships, we can add a higher order, treating the model as a polynomial.
+2)Converting a numeric variable to a binary indicator: BMI(Body Mass index) may have zero impact on medical expenditure for individuals in the nomal weight range.
+3)Adding interaction effect: So far, we have discussed each feature individual contribution to the outcome.What if certain features have a combined effect on the dependent variable.
+#1)Adding non-linear relationships
+insurance$age2 <- insurance$age^2
+#2)Converting numeric to binary
+insurance$bmi30 <- ifelse(insurance$bmi >= 30,1,0)
+#3)bmi30*smoker <- is shorthand to charges ~ bmi30+smokeryes+bmi30:smokeryes
+#Putting all together
+model2 <- lm(charges ~ age+age2+children+bmi+sex+bmi30*smoker+region,data = insurance)
+model2
+summary(model2)
+
+Conclusion:- Relative to our first model, the R-sqaured value improved from 0.75 to 0.86.
